@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>歐洲輪盤預測工具</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+<link rel="icon" href="favicon.ico">
+<meta name="theme-color" content="#041640">
 </head>
 <body>
   <main class="app-shell">
@@ -12,7 +16,7 @@
       <div class="section-head compact-head">
         <div>
           <h2>1. 輸入最新一期號碼</h2>
-          <p>輸入後會自動排在歷史序列最前面，並更新預測結果。</p>
+          <p>加入最新一期後會自動更新預測結果。</p>
         </div>
       </div>
       <div class="inline-row latest-row">
@@ -25,7 +29,6 @@
       <div class="section-head">
         <div>
           <h2>2. 下一期預測結果</h2>
-          <p>依歷史順向 / 逆向間隔推算，並結合「通常不出號碼」交叉判讀。</p>
         </div>
         <button id="analyzeBtn" class="primary-btn">重新分析</button>
       </div>
@@ -33,13 +36,11 @@
       <div class="results-grid">
         <div class="subcard">
           <h3>可能會開的號碼</h3>
-          <p class="subcard-text">依重複次數由多至少排序；次數相同時號碼較小優先。</p>
           <div id="possibleNumbers" class="result-list empty-state">至少需要 2 筆號碼才能產生預測。</div>
         </div>
 
         <div class="subcard">
           <h3>預測不會開的號碼</h3>
-          <p class="subcard-text">由系統預測不會開號碼，與當期「通常不出號碼」整合顯示。</p>
           <div id="unlikelyNumbers" class="result-list empty-state">至少需要 2 筆號碼才能產生預測。</div>
         </div>
       </div>
@@ -71,8 +72,7 @@
       <div class="section-head inner-head">
         <div>
           <h3>通常不出號碼輸入</h3>
-          <p>固定保留原始名單；每期僅暫時扣除與「可能會開」重疊的號碼。</p>
-        </div>
+          </div>
       </div>
 
       <label class="field-label" for="usualExcludeInput">通常不出號碼</label>

@@ -1,12 +1,8 @@
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 :root {
   --bg-1: #03112f;
   --bg-2: #071b47;
-  --panel: #0d1b3d;
-  --panel-2: #0a1633;
   --line: rgba(116, 153, 255, 0.16);
   --text: #eef4ff;
   --muted: #9fb2d9;
@@ -14,7 +10,6 @@
   --primary-text: #042a11;
   --secondary: #16386f;
   --secondary-hover: #1b4687;
-  --danger: #70233a;
   --danger-border: rgba(255, 111, 145, 0.35);
   --chip: #13284f;
   --chip-border: rgba(159, 178, 217, 0.18);
@@ -31,9 +26,7 @@ html, body {
     linear-gradient(90deg, #000814 0%, #041640 18%, #03112f 50%, #041640 82%, #000814 100%);
 }
 
-body {
-  padding: 24px 16px 48px;
-}
+body { padding: 24px 16px 48px; }
 
 .app-shell {
   width: 100%;
@@ -51,13 +44,8 @@ body {
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.26);
 }
 
-.highlight-card {
-  border-color: rgba(46, 229, 109, 0.34);
-}
-
-.compact-card {
-  padding-bottom: 16px;
-}
+.highlight-card { border-color: rgba(46, 229, 109, 0.34); }
+.compact-card { padding-bottom: 16px; }
 
 .section-head {
   display: flex;
@@ -67,23 +55,15 @@ body {
   margin-bottom: 14px;
 }
 
-.compact-head {
-  margin-bottom: 10px;
-}
+.compact-head { margin-bottom: 10px; }
+.inner-head { margin: 8px 0 12px; }
 
-.inner-head {
-  margin: 8px 0 12px;
-}
-
-.section-head h2,
-.section-head h3 {
+.section-head h2, .section-head h3 {
   margin: 0 0 6px;
   line-height: 1.2;
 }
 
-.section-head p,
-.subcard-text,
-.info-title {
+.section-head p, .subcard-text, .info-title {
   margin: 0;
   color: var(--muted);
   font-size: 14px;
@@ -98,8 +78,7 @@ body {
   color: #dce8ff;
 }
 
-textarea,
-input[type="number"] {
+textarea, input[type="number"] {
   width: 100%;
   border: 1px solid rgba(123, 151, 214, 0.18);
   background: rgba(2, 11, 34, 0.92);
@@ -111,13 +90,9 @@ input[type="number"] {
   transition: border-color 0.15s ease, transform 0.15s ease;
 }
 
-textarea::placeholder,
-input::placeholder {
-  color: rgba(181, 198, 230, 0.52);
-}
+textarea::placeholder, input::placeholder { color: rgba(181, 198, 230, 0.52); }
 
-textarea:focus,
-input:focus {
+textarea:focus, input:focus {
   border-color: rgba(46, 229, 109, 0.55);
   transform: translateY(-1px);
 }
@@ -151,26 +126,9 @@ button:hover {
   filter: brightness(1.02);
 }
 
-.primary-btn {
-  background: var(--primary);
-  color: var(--primary-text);
-}
-
-.secondary-btn {
-  background: var(--secondary);
-  color: #f4f7ff;
-}
-
-.secondary-btn:hover {
-  background: var(--secondary-hover);
-}
-
-.ghost-btn {
-  background: transparent;
-  color: #dfe8ff;
-  border: 1px solid rgba(145, 169, 219, 0.24);
-}
-
+.primary-btn { background: var(--primary); color: var(--primary-text); }
+.secondary-btn { background: var(--secondary); color: #f4f7ff; }
+.secondary-btn:hover { background: var(--secondary-hover); }
 .danger-btn {
   background: rgba(112, 35, 58, 0.22);
   color: #ffd4dc;
@@ -191,10 +149,7 @@ button:hover {
   border-radius: 16px;
 }
 
-.info-title {
-  margin-bottom: 10px;
-  font-weight: 700;
-}
+.info-title { margin-bottom: 10px; font-weight: 700; }
 
 .results-grid {
   display: grid;
@@ -209,9 +164,7 @@ button:hover {
   padding: 14px;
 }
 
-.subcard h3 {
-  margin: 0 0 8px;
-}
+.subcard h3 { margin: 0 0 8px; }
 
 .result-list {
   display: flex;
@@ -244,12 +197,9 @@ button:hover {
   border: 1px solid rgba(255,255,255,0.12);
 }
 
-.legend-dot-red {
-  background: var(--red);
-}
+.legend-dot-red { background: var(--red); }
 
-.number-chip,
-.number-circle {
+.number-chip, .number-circle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -323,32 +273,11 @@ button:hover {
 }
 
 @media (max-width: 640px) {
-  body {
-    padding: 16px 12px 36px;
-  }
-
-  .card {
-    padding: 16px 14px;
-    border-radius: 18px;
-  }
-
-  .section-head {
-    flex-direction: column;
-  }
-
-  .inline-row {
-    grid-template-columns: 1fr;
-  }
-
-  button {
-    width: 100%;
-  }
-
-  .button-row {
-    flex-direction: column;
-  }
-
-  .history-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
+  body { padding: 16px 12px 36px; }
+  .card { padding: 16px 14px; border-radius: 18px; }
+  .section-head { flex-direction: column; }
+  .inline-row { grid-template-columns: 1fr; }
+  button { width: 100%; }
+  .button-row { flex-direction: column; }
+  .history-grid { grid-template-columns: repeat(4, 1fr); }
 }

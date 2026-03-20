@@ -15,7 +15,6 @@
           <p>輸入後會自動排在歷史序列最前面，並更新預測結果。</p>
         </div>
       </div>
-
       <div class="inline-row latest-row">
         <input id="latestInput" type="number" inputmode="numeric" min="0" max="36" placeholder="0 ~ 36" />
         <button id="addLatestBtn" class="primary-btn">加入最新一期</button>
@@ -35,13 +34,13 @@
         <div class="subcard">
           <h3>可能會開的號碼</h3>
           <p class="subcard-text">依重複次數由多至少排序；次數相同時號碼較小優先。</p>
-          <div id="possibleNumbers" class="result-list empty-state">尚無預測結果。</div>
+          <div id="possibleNumbers" class="result-list empty-state">至少需要 2 筆號碼才能產生預測。</div>
         </div>
 
         <div class="subcard">
           <h3>預測不會開的號碼</h3>
           <p class="subcard-text">由系統預測不會開號碼，與當期「通常不出號碼」整合顯示。</p>
-          <div id="unlikelyNumbers" class="result-list empty-state">尚無預測結果。</div>
+          <div id="unlikelyNumbers" class="result-list empty-state">至少需要 2 筆號碼才能產生預測。</div>
         </div>
       </div>
 
@@ -54,17 +53,17 @@
       <div class="section-head">
         <div>
           <h2>3. 輸入前多期中獎號碼</h2>
-          <p>由最後一期到最新一期批量輸入，可用逗號或空格分隔。</p>
+          <p>由最新一期到最舊一期批量輸入，可用逗號或空格分隔。</p>
         </div>
       </div>
 
       <label class="field-label" for="bulkInput">批量輸入</label>
-      <textarea id="bulkInput" rows="5" placeholder="例如：5, 9, 22, 1, 0, 32"></textarea>
+      <textarea id="bulkInput" rows="5" placeholder="例如：13, 8, 0, 8, 12, 32"></textarea>
 
       <div class="button-row">
-        <button id="replaceBulkBtn" class="secondary-btn">更新所有與累計記錄</button>
-        <button id="loadSampleBtn" class="ghost-btn">載入範例</button>
-        <button id="clearAllBtn" class="danger-btn">清空全部</button>
+        <button id="replaceBulkBtn" class="secondary-btn">更新所有</button>
+        <button id="appendBulkBtn" class="secondary-btn">累計記錄</button>
+        <button id="clearAllHistoryBtn" class="danger-btn">清除全部</button>
       </div>
 
       <div class="divider"></div>
@@ -80,8 +79,9 @@
       <textarea id="usualExcludeInput" rows="3" placeholder="例如：3, 7, 12, 18, 25"></textarea>
 
       <div class="button-row">
-        <button id="saveUsualExcludeBtn" class="secondary-btn">儲存通常不出號碼</button>
-        <button id="clearUsualExcludeBtn" class="ghost-btn">清除通常不出號碼</button>
+        <button id="replaceUsualExcludeBtn" class="secondary-btn">更新所有</button>
+        <button id="appendUsualExcludeBtn" class="secondary-btn">累計記錄</button>
+        <button id="clearUsualExcludeBtn" class="danger-btn">清除全部</button>
       </div>
 
       <div class="info-block">
@@ -94,7 +94,7 @@
       <div class="section-head">
         <div>
           <h2>4. 歷史序列</h2>
-          <p>最新一期排在最前面，最後一期排在最後面。</p>
+          <p>最新一期排在最前面，最舊一期排在最後面。</p>
         </div>
         <div class="stats-inline">
           <span class="pill"><strong id="historyCount">0</strong> 筆</span>

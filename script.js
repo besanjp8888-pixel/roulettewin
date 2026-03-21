@@ -7,6 +7,7 @@ const GROUP_COLORS = ['#6ec6ff', '#ffca5f', '#9ad68f', '#d08bee', '#ffe36e', '#7
 const state = {
   historyLatestFirst: [],
   usualExcludeOriginal: [],
+  lastValidation: null,
 };
 
 const els = {
@@ -27,6 +28,7 @@ const els = {
   historyList: document.getElementById('historyList'),
   possibleNumbers: document.getElementById('possibleNumbers'),
   unlikelyNumbers: document.getElementById('unlikelyNumbers'),
+  validationStatus: document.getElementById('validationStatus'),
 };
 
 function isValidNumber(value) {
@@ -56,6 +58,7 @@ function loadState() {
     const parsed = JSON.parse(raw);
     state.historyLatestFirst = Array.isArray(parsed.historyLatestFirst) ? parsed.historyLatestFirst.filter(isValidNumber) : [];
     state.usualExcludeOriginal = Array.isArray(parsed.usualExcludeOriginal) ? dedupe(parsed.usualExcludeOriginal.filter(isValidNumber)) : [];
+    state.lastValidation = parsed.lastValidation ?? null;
   } catch (err) {
     console.error(err);
   }
@@ -301,6 +304,37 @@ function renderUsualExcludeSaved(currentActive) {
   }).join('');
 }
 
+
+function renderValidation() {
+  if (!state.lastValidation) {
+    els.validationStatus.className = 'validation-status empty-status';
+    els.validationStatus.textContent = '尚無驗證';
+    return;
+  }
+
+  if (state.lastValidation.hit) {
+    els.validationStatus.className = 'validation-status';
+    els.validationStatus.innerHTML = `上期預測有 <span class="hit-chip">中</span>`;
+  } else {
+    els.validationStatus.className = 'validation-status';
+    els.validationStatus.textContent = '上期預測有意外，命中不遠了';
+  }
+}
+
+function getPossibleSetFromCurrentHistory() {
+  const historyChronological = getChronologicalHistory();
+  if (historyChronological.length < 2) return new Set();
+
+  const latest = state.historyLatestFirst[0];
+  const { forward, backward } = buildDistances(historyChronological);
+  const possibleSet = new Set();
+
+  for (const step of forward) possibleSet.add(moveForward(latest, step));
+  for (const step of backward) possibleSet.add(moveBackward(latest, step));
+
+  return possibleSet;
+}
+
 function renderHistory() {
   els.historyCount.textContent = String(state.historyLatestFirst.length);
   els.latestNumber.textContent = state.historyLatestFirst.length ? String(state.historyLatestFirst[0]) : '-';
@@ -321,6 +355,7 @@ function renderAll() {
   renderPossibleNumbers(predictionBundle.possibleCounts, predictionBundle.possibleDisplayGroups);
   renderUnlikelyRuns(predictionBundle.unlikelyRuns, predictionBundle.overlapSet);
   renderUsualExcludeSaved(predictionBundle.currentUsualActive);
+  renderValidation();
   saveState();
 }
 
@@ -330,6 +365,12 @@ function handleAddLatest() {
     alert('請輸入 0 ~ 36 的號碼。');
     return;
   }
+
+  const previousPossibleSet = getPossibleSetFromCurrentHistory();
+  state.lastValidation = previousPossibleSet.size
+    ? { hit: previousPossibleSet.has(value), number: value }
+    : null;
+
   state.historyLatestFirst.unshift(value);
   els.latestInput.value = '';
   renderAll();
@@ -339,6 +380,7 @@ function handleReplaceBulkHistory() {
   try {
     const numbers = parseNumberList(els.bulkInput.value);
     state.historyLatestFirst = numbers;
+    state.lastValidation = null;
     renderAll();
   } catch (err) {
     alert(err.message);
@@ -349,6 +391,7 @@ function handleAppendBulkHistory() {
   try {
     const numbers = parseNumberList(els.bulkInput.value);
     state.historyLatestFirst = numbers.concat(state.historyLatestFirst);
+    state.lastValidation = null;
     renderAll();
   } catch (err) {
     alert(err.message);
@@ -357,6 +400,7 @@ function handleAppendBulkHistory() {
 
 function handleClearAllHistory() {
   state.historyLatestFirst = [];
+  state.lastValidation = null;
   renderAll();
 }
 

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>歐洲輪盤預測工具</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <section class="card compact-card">
+      <div class="section-head compact-head">
+        <div>
+          <h2>1. 輸入最新一期號碼</h2>
+          <p>輸入後會自動排在歷史序列最前面，並更新預測結果。</p>
+        </div>
+      </div>
+      <div class="inline-row latest-row">
+        <input id="latestInput" type="number" inputmode="numeric" min="0" max="36" placeholder="0 ~ 36" />
+        <button id="addLatestBtn" class="primary-btn">加入最新一期</button>
+      </div>
+    </section>
+
+    <section class="card highlight-card">
+      <div class="section-head">
+        <div>
+          <h2>2. 下一期預測結果</h2>
+          <p>依歷史順向 / 逆向間隔推算，並結合「通常不出號碼」交叉判讀。</p>
+        </div>
+        <button id="analyzeBtn" class="primary-btn">重新分析</button>
+      </div>
+
+      <div class="results-grid">
+        <div class="subcard">
+          <h3>可能會開的號碼</h3>
+          <p class="subcard-text">依重複次數由多至少排序；次數相同時號碼較小優先。</p>
+          <div id="possibleNumbers" class="result-list empty-state">至少需要 2 筆號碼才能產生預測。</div>
+        </div>
+
+        <div class="subcard">
+          <h3>預測不會開的號碼</h3>
+          <p class="subcard-text">由系統預測不會開號碼，與當期「通常不出號碼」整合顯示。</p>
+          <div id="unlikelyNumbers" class="result-list empty-state">至少需要 2 筆號碼才能產生預測。</div>
+        </div>
+      </div>
+
+      <div class="legend-row">
+        <span class="legend-item"><span class="legend-dot legend-dot-red"></span>與系統預測不會開 + 當期通常不出號碼重合</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <div>
+          <h2>3. 輸入前多期中獎號碼</h2>
+          <p>由最新一期到最舊一期批量輸入，可用逗號或空格分隔。</p>
+        </div>
+      </div>
+
+      <label class="field-label" for="bulkInput">批量輸入</label>
+      <textarea id="bulkInput" rows="5" placeholder="例如：13, 8, 0, 8, 12, 32"></textarea>
+
+      <div class="button-row">
+        <button id="replaceBulkBtn" class="secondary-btn">更新所有</button>
+        <button id="appendBulkBtn" class="secondary-btn">累計記錄</button>
+        <button id="clearAllHistoryBtn" class="danger-btn">清除全部</button>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section-head inner-head">
+        <div>
+          <h3>通常不出號碼輸入</h3>
+          <p>固定保留原始名單；每期僅暫時扣除與「可能會開」重疊的號碼。</p>
+        </div>
+      </div>
+
+      <label class="field-label" for="usualExcludeInput">通常不出號碼</label>
+      <textarea id="usualExcludeInput" rows="3" placeholder="例如：3, 7, 12, 18, 25"></textarea>
+
+      <div class="button-row">
+        <button id="replaceUsualExcludeBtn" class="secondary-btn">更新所有</button>
+        <button id="appendUsualExcludeBtn" class="secondary-btn">累計記錄</button>
+        <button id="clearUsualExcludeBtn" class="danger-btn">清除全部</button>
+      </div>
+
+      <div class="info-block">
+        <div class="info-title">原始通常不出號碼</div>
+        <div id="usualExcludeSaved" class="result-list empty-state">尚未設定。</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <div>
+          <h2>4. 歷史序列</h2>
+          <p>最新一期排在最前面，最舊一期排在最後面。</p>
+        </div>
+        <div class="stats-inline">
+          <span class="pill"><strong id="historyCount">0</strong> 筆</span>
+          <span class="pill">最新：<strong id="latestNumber">-</strong></span>
+        </div>
+      </div>
+
+      <div id="historyList" class="history-grid empty-state">尚未輸入任何號碼。</div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

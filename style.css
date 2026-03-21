@@ -166,7 +166,7 @@ button:hover {
 
 .subcard h3 { margin: 0 0 10px; }
 
-.result-list, .group-results {
+.result-list {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
@@ -174,25 +174,52 @@ button:hover {
   min-height: 44px;
 }
 
-.group-results {
-  flex-direction: column;
-  align-items: stretch;
-}
-
-.group-block {
+.possible-wrap {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  padding: 10px;
-  border-radius: 16px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
+  gap: 12px 10px;
+  margin-top: 10px;
+  min-height: 44px;
+  align-items: flex-start;
+}
+
+.possible-circle {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: #18396e;
+  color: var(--text);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+.possible-circle.colored {
+  color: #071a3b;
+  border-color: rgba(255,255,255,0.16);
+}
+
+.possible-number {
+  font-size: 20px;
+  font-weight: 800;
+  transform: translateY(-1px);
+}
+
+.possible-count {
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0.95;
 }
 
 .unlikely-run-wrap {
   display: flex;
   flex-wrap: wrap;
-  gap: 18px;
+  gap: 36px;
   margin-top: 10px;
   min-height: 44px;
   align-items: center;
@@ -231,7 +258,7 @@ button:hover {
 
 .legend-dot-red { background: var(--red); }
 
-.number-chip, .number-circle {
+.number-circle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -239,17 +266,10 @@ button:hover {
   min-height: 42px;
   padding: 0 12px;
   border-radius: 999px;
-  background: var(--chip);
-  border: 1px solid var(--chip-border);
+  background: #13284f;
+  border: 1px solid rgba(159, 178, 217, 0.18);
   color: var(--text);
   font-weight: 700;
-}
-
-.number-chip .count {
-  font-size: 12px;
-  color: var(--muted);
-  margin-left: 6px;
-  font-weight: 600;
 }
 
 .number-circle.red-fill {
@@ -312,4 +332,6 @@ button:hover {
   button { width: 100%; }
   .button-row { flex-direction: column; }
   .history-grid { grid-template-columns: repeat(4, 1fr); }
+  .possible-circle { width: 56px; height: 56px; }
+  .unlikely-run-wrap { gap: 48px; }
 }

@@ -1,8 +1,8 @@
-const STORAGE_KEY = 'roulette_app_v7_state';
+const STORAGE_KEY = 'roulette_app_v8_state';
 
 const wheelOrder = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
 const wheelIndexMap = Object.fromEntries(wheelOrder.map((n, i) => [n, i]));
-const GROUP_COLORS = ['#4fc3f7', '#ffb74d', '#81c784', '#ba68c8', '#ffd54f', '#4db6ac', '#f48fb1', '#90caf9'];
+const GROUP_COLORS = ['#6ec6ff', '#ffca5f', '#9ad68f', '#d08bee', '#ffe36e', '#79d7cb', '#f6a6c8', '#9cbcff'];
 
 const state = {
   historyLatestFirst: [],
@@ -26,7 +26,6 @@ const els = {
   latestNumber: document.getElementById('latestNumber'),
   historyList: document.getElementById('historyList'),
   possibleNumbers: document.getElementById('possibleNumbers'),
-  possibleGroupNumbers: document.getElementById('possibleGroupNumbers'),
   unlikelyNumbers: document.getElementById('unlikelyNumbers'),
 };
 
@@ -42,9 +41,7 @@ function parseNumberList(text) {
   const tokens = text.split(/[^0-9]+/g).map(t => t.trim()).filter(Boolean);
   const nums = tokens.map(t => Number(t)).filter(n => Number.isInteger(n));
   const invalid = nums.filter(n => !isValidNumber(n));
-  if (invalid.length) {
-    throw new Error(`含有超出範圍的號碼：${invalid.join(', ')}`);
-  }
+  if (invalid.length) throw new Error(`含有超出範圍的號碼：${invalid.join(', ')}`);
   return nums;
 }
 
@@ -87,15 +84,11 @@ function moveBackward(number, steps) {
 function getWheelNeighbors(number) {
   const idx = wheelIndexMap[number];
   const len = wheelOrder.length;
-  return [
-    wheelOrder[(idx - 1 + len) % len],
-    number,
-    wheelOrder[(idx + 1) % len]
-  ];
+  return [wheelOrder[(idx - 1 + len) % len], number, wheelOrder[(idx + 1) % len]];
 }
 
 function getChronologicalHistory() {
-  return [...state.historyLatestFirst].reverse(); // oldest -> latest
+  return [...state.historyLatestFirst].reverse();
 }
 
 function buildDistances(historyChronological) {
@@ -110,45 +103,71 @@ function buildDistances(historyChronological) {
   return { forward, backward };
 }
 
-function buildMergedGroups(possibleNumberEntries) {
-  if (!possibleNumberEntries.length) return [];
-
-  const seedGroups = possibleNumberEntries.map(([num]) => ({
-    numbers: new Set(getWheelNeighbors(num))
-  }));
-
+function buildMergedGroupsFromPossible(possibleSet) {
+  const seedGroups = [...possibleSet].map(num => new Set(getWheelNeighbors(num)));
   const visited = new Array(seedGroups.length).fill(false);
   const merged = [];
 
   for (let i = 0; i < seedGroups.length; i += 1) {
     if (visited[i]) continue;
-    const stack = [i];
     visited[i] = true;
-    const union = new Set(seedGroups[i].numbers);
+    const stack = [i];
+    const union = new Set(seedGroups[i]);
 
     while (stack.length) {
-      const current = stack.pop();
+      const cur = stack.pop();
       for (let j = 0; j < seedGroups.length; j += 1) {
         if (visited[j]) continue;
-        const hasOverlap = [...seedGroups[j].numbers].some(n => union.has(n));
-        if (hasOverlap) {
+        const overlap = [...seedGroups[j]].some(n => union.has(n));
+        if (overlap) {
           visited[j] = true;
           stack.push(j);
-          for (const n of seedGroups[j].numbers) union.add(n);
+          for (const n of seedGroups[j]) union.add(n);
         }
       }
     }
-
     merged.push([...union]);
   }
 
-  return merged.map((nums, idx) => {
-    const ordered = wheelOrder.filter(n => nums.includes(n));
-    return {
-      color: GROUP_COLORS[idx % GROUP_COLORS.length],
-      numbers: ordered
-    };
-  });
+  return merged.map((nums, idx) => ({
+    color: GROUP_COLORS[idx % GROUP_COLORS.length],
+    numbers: wheelOrder.filter(n => nums.includes(n))
+  }));
+}
+
+function buildPossibleAdjacencyGroups(possibleSet) {
+  const present = wheelOrder.filter(n => possibleSet.has(n));
+  if (!present.length) return [];
+
+  let runs = [];
+  let current = [present[0]];
+
+  for (let i = 1; i < present.length; i += 1) {
+    const prev = current[current.length - 1];
+    const n = present[i];
+    const prevIdx = wheelIndexMap[prev];
+    if (wheelOrder[(prevIdx + 1) % wheelOrder.length] === n) {
+      current.push(n);
+    } else {
+      runs.push(current);
+      current = [n];
+    }
+  }
+  runs.push(current);
+
+  if (runs.length > 1) {
+    const first = runs[0];
+    const last = runs[runs.length - 1];
+    const lastLastIdx = wheelIndexMap[last[last.length - 1]];
+    if (wheelOrder[(lastLastIdx + 1) % wheelOrder.length] === first[0]) {
+      runs = [[...last, ...first], ...runs.slice(1, -1)];
+    }
+  }
+
+  return runs.map((run, idx) => ({
+    numbers: run,
+    color: run.length >= 2 ? GROUP_COLORS[idx % GROUP_COLORS.length] : null
+  }));
 }
 
 function buildPredictions() {
@@ -156,7 +175,7 @@ function buildPredictions() {
   if (historyChronological.length < 2) {
     return {
       possibleCounts: new Map(),
-      possibleGroupBlocks: [],
+      possibleDisplayGroups: [],
       unlikelyRuns: [],
       overlapSet: new Set(),
       currentUsualActive: []
@@ -175,19 +194,19 @@ function buildPredictions() {
     possibleCounts.set(n, (possibleCounts.get(n) || 0) + 1);
   }
 
-  const possibleEntries = [...possibleCounts.entries()].sort((a, b) => (b[1] - a[1]) || (a[0] - b[0]));
-  const possibleGroupBlocks = buildMergedGroups(possibleEntries);
+  const possibleSet = new Set(possibleCounts.keys());
 
+  // Hidden merged groups still used to derive unlikely numbers.
+  const hiddenMergedGroupBlocks = buildMergedGroupsFromPossible(possibleSet);
   const possibleGroupUnion = new Set();
-  for (const g of possibleGroupBlocks) {
-    for (const n of g.numbers) possibleGroupUnion.add(n);
+  for (const group of hiddenMergedGroupBlocks) {
+    for (const n of group.numbers) possibleGroupUnion.add(n);
   }
 
   const unlikelyNumbers = wheelOrder.filter(n => !possibleGroupUnion.has(n));
   const currentUsualActive = state.usualExcludeOriginal.filter(n => !possibleGroupUnion.has(n));
   const overlapSet = new Set(unlikelyNumbers.filter(n => state.usualExcludeOriginal.includes(n)));
 
-  // build wheel-adjacent runs
   let runs = [];
   let current = [];
   for (const n of unlikelyNumbers) {
@@ -197,8 +216,7 @@ function buildPredictions() {
     }
     const prev = current[current.length - 1];
     const prevIdx = wheelIndexMap[prev];
-    const nextIdx = (prevIdx + 1) % wheelOrder.length;
-    if (wheelOrder[nextIdx] === n) {
+    if (wheelOrder[(prevIdx + 1) % wheelOrder.length] === n) {
       current.push(n);
     } else {
       runs.push(current);
@@ -207,7 +225,6 @@ function buildPredictions() {
   }
   if (current.length) runs.push(current);
 
-  // merge circular first/last run if needed
   if (runs.length > 1) {
     const first = runs[0];
     const last = runs[runs.length - 1];
@@ -217,41 +234,39 @@ function buildPredictions() {
     }
   }
 
+  const possibleDisplayGroups = buildPossibleAdjacencyGroups(possibleSet);
+
   return {
     possibleCounts,
-    possibleGroupBlocks,
+    possibleDisplayGroups,
     unlikelyRuns: runs,
     overlapSet,
     currentUsualActive
   };
 }
 
-function renderPossibleNumbers(possibleCounts) {
-  const entries = [...possibleCounts.entries()].sort((a, b) => (b[1] - a[1]) || (a[0] - b[0]));
-  if (!entries.length) {
-    els.possibleNumbers.className = 'result-list empty-state';
+function renderPossibleNumbers(possibleCounts, possibleDisplayGroups) {
+  if (!possibleCounts.size) {
+    els.possibleNumbers.className = 'possible-wrap empty-state';
     els.possibleNumbers.textContent = '至少需要 2 筆號碼才能產生預測。';
     return;
   }
-  els.possibleNumbers.className = 'result-list';
-  els.possibleNumbers.innerHTML = entries.map(([num, count]) =>
-    `<span class="number-chip">${num}<span class="count">${count}次</span></span>`
-  ).join('');
-}
 
-function renderPossibleGroups(groupBlocks) {
-  if (!groupBlocks.length) {
-    els.possibleGroupNumbers.className = 'group-results empty-state';
-    els.possibleGroupNumbers.textContent = '至少需要 2 筆號碼才能產生預測。';
-    return;
+  els.possibleNumbers.className = 'possible-wrap';
+
+  const colorByNumber = new Map();
+  for (const group of possibleDisplayGroups) {
+    if (!group.color) continue;
+    for (const n of group.numbers) colorByNumber.set(n, group.color);
   }
 
-  els.possibleGroupNumbers.className = 'group-results';
-  els.possibleGroupNumbers.innerHTML = groupBlocks.map((group) => {
-    const chips = group.numbers.map(num =>
-      `<span class="number-circle" style="background:${group.color}; color:#08203f; border-color:rgba(255,255,255,0.15)">${num}</span>`
-    ).join('');
-    return `<div class="group-block">${chips}</div>`;
+  const ordered = wheelOrder.filter(n => possibleCounts.has(n));
+  els.possibleNumbers.innerHTML = ordered.map(num => {
+    const count = possibleCounts.get(num);
+    const color = colorByNumber.get(num);
+    const cls = color ? 'possible-circle colored' : 'possible-circle';
+    const style = color ? ` style="background:${color}"` : '';
+    return `<span class="${cls}"${style}><span class="possible-number">${num}</span><span class="possible-count">${count}次</span></span>`;
   }).join('');
 }
 
@@ -303,8 +318,7 @@ function renderHistory() {
 function renderAll() {
   const predictionBundle = buildPredictions();
   renderHistory();
-  renderPossibleNumbers(predictionBundle.possibleCounts);
-  renderPossibleGroups(predictionBundle.possibleGroupBlocks);
+  renderPossibleNumbers(predictionBundle.possibleCounts, predictionBundle.possibleDisplayGroups);
   renderUnlikelyRuns(predictionBundle.unlikelyRuns, predictionBundle.overlapSet);
   renderUsualExcludeSaved(predictionBundle.currentUsualActive);
   saveState();
@@ -323,7 +337,7 @@ function handleAddLatest() {
 
 function handleReplaceBulkHistory() {
   try {
-    const numbers = parseNumberList(els.bulkInput.value); // latest -> oldest
+    const numbers = parseNumberList(els.bulkInput.value);
     state.historyLatestFirst = numbers;
     renderAll();
   } catch (err) {
@@ -333,7 +347,7 @@ function handleReplaceBulkHistory() {
 
 function handleAppendBulkHistory() {
   try {
-    const numbers = parseNumberList(els.bulkInput.value); // latest -> oldest
+    const numbers = parseNumberList(els.bulkInput.value);
     state.historyLatestFirst = numbers.concat(state.historyLatestFirst);
     renderAll();
   } catch (err) {

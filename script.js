@@ -1,7 +1,8 @@
-const STORAGE_KEY = 'roulette_app_v5_state';
+const STORAGE_KEY = 'roulette_app_v7_state';
 
 const wheelOrder = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
 const wheelIndexMap = Object.fromEntries(wheelOrder.map((n, i) => [n, i]));
+const GROUP_COLORS = ['#4fc3f7', '#ffb74d', '#81c784', '#ba68c8', '#ffd54f', '#4db6ac', '#f48fb1', '#90caf9'];
 
 const state = {
   historyLatestFirst: [],
@@ -25,6 +26,7 @@ const els = {
   latestNumber: document.getElementById('latestNumber'),
   historyList: document.getElementById('historyList'),
   possibleNumbers: document.getElementById('possibleNumbers'),
+  possibleGroupNumbers: document.getElementById('possibleGroupNumbers'),
   unlikelyNumbers: document.getElementById('unlikelyNumbers'),
 };
 
@@ -82,8 +84,18 @@ function moveBackward(number, steps) {
   return wheelOrder[(wheelIndexMap[number] - steps + len) % len];
 }
 
+function getWheelNeighbors(number) {
+  const idx = wheelIndexMap[number];
+  const len = wheelOrder.length;
+  return [
+    wheelOrder[(idx - 1 + len) % len],
+    number,
+    wheelOrder[(idx + 1) % len]
+  ];
+}
+
 function getChronologicalHistory() {
-  return [...state.historyLatestFirst].reverse();
+  return [...state.historyLatestFirst].reverse(); // oldest -> latest
 }
 
 function buildDistances(historyChronological) {
@@ -98,14 +110,56 @@ function buildDistances(historyChronological) {
   return { forward, backward };
 }
 
+function buildMergedGroups(possibleNumberEntries) {
+  if (!possibleNumberEntries.length) return [];
+
+  const seedGroups = possibleNumberEntries.map(([num]) => ({
+    numbers: new Set(getWheelNeighbors(num))
+  }));
+
+  const visited = new Array(seedGroups.length).fill(false);
+  const merged = [];
+
+  for (let i = 0; i < seedGroups.length; i += 1) {
+    if (visited[i]) continue;
+    const stack = [i];
+    visited[i] = true;
+    const union = new Set(seedGroups[i].numbers);
+
+    while (stack.length) {
+      const current = stack.pop();
+      for (let j = 0; j < seedGroups.length; j += 1) {
+        if (visited[j]) continue;
+        const hasOverlap = [...seedGroups[j].numbers].some(n => union.has(n));
+        if (hasOverlap) {
+          visited[j] = true;
+          stack.push(j);
+          for (const n of seedGroups[j].numbers) union.add(n);
+        }
+      }
+    }
+
+    merged.push([...union]);
+  }
+
+  return merged.map((nums, idx) => {
+    const ordered = wheelOrder.filter(n => nums.includes(n));
+    return {
+      color: GROUP_COLORS[idx % GROUP_COLORS.length],
+      numbers: ordered
+    };
+  });
+}
+
 function buildPredictions() {
   const historyChronological = getChronologicalHistory();
   if (historyChronological.length < 2) {
     return {
       possibleCounts: new Map(),
-      finalUsualExcludeCurrent: [],
-      finalCombinedUnlikely: [],
+      possibleGroupBlocks: [],
+      unlikelyRuns: [],
       overlapSet: new Set(),
+      currentUsualActive: []
     };
   }
 
@@ -121,18 +175,55 @@ function buildPredictions() {
     possibleCounts.set(n, (possibleCounts.get(n) || 0) + 1);
   }
 
-  const possibleSet = new Set(possibleCounts.keys());
-  const predictedUnlikely = [];
-  for (let n = 0; n <= 36; n += 1) {
-    if (!possibleSet.has(n)) predictedUnlikely.push(n);
+  const possibleEntries = [...possibleCounts.entries()].sort((a, b) => (b[1] - a[1]) || (a[0] - b[0]));
+  const possibleGroupBlocks = buildMergedGroups(possibleEntries);
+
+  const possibleGroupUnion = new Set();
+  for (const g of possibleGroupBlocks) {
+    for (const n of g.numbers) possibleGroupUnion.add(n);
   }
 
-  const finalUsualExcludeCurrent = state.usualExcludeOriginal.filter(n => !possibleSet.has(n));
-  const predictedUnlikelySet = new Set(predictedUnlikely);
-  const overlapSet = new Set(finalUsualExcludeCurrent.filter(n => predictedUnlikelySet.has(n)));
-  const finalCombinedUnlikely = dedupe([...predictedUnlikely, ...finalUsualExcludeCurrent]).sort((a, b) => a - b);
+  const unlikelyNumbers = wheelOrder.filter(n => !possibleGroupUnion.has(n));
+  const currentUsualActive = state.usualExcludeOriginal.filter(n => !possibleGroupUnion.has(n));
+  const overlapSet = new Set(unlikelyNumbers.filter(n => state.usualExcludeOriginal.includes(n)));
 
-  return { possibleCounts, finalUsualExcludeCurrent, finalCombinedUnlikely, overlapSet };
+  // build wheel-adjacent runs
+  let runs = [];
+  let current = [];
+  for (const n of unlikelyNumbers) {
+    if (!current.length) {
+      current.push(n);
+      continue;
+    }
+    const prev = current[current.length - 1];
+    const prevIdx = wheelIndexMap[prev];
+    const nextIdx = (prevIdx + 1) % wheelOrder.length;
+    if (wheelOrder[nextIdx] === n) {
+      current.push(n);
+    } else {
+      runs.push(current);
+      current = [n];
+    }
+  }
+  if (current.length) runs.push(current);
+
+  // merge circular first/last run if needed
+  if (runs.length > 1) {
+    const first = runs[0];
+    const last = runs[runs.length - 1];
+    const lastLastIdx = wheelIndexMap[last[last.length - 1]];
+    if (wheelOrder[(lastLastIdx + 1) % wheelOrder.length] === first[0]) {
+      runs = [[...last, ...first], ...runs.slice(1, -1)];
+    }
+  }
+
+  return {
+    possibleCounts,
+    possibleGroupBlocks,
+    unlikelyRuns: runs,
+    overlapSet,
+    currentUsualActive
+  };
 }
 
 function renderPossibleNumbers(possibleCounts) {
@@ -148,16 +239,36 @@ function renderPossibleNumbers(possibleCounts) {
   ).join('');
 }
 
-function renderUnlikelyNumbers(numbers, overlapSet) {
-  if (!numbers.length) {
+function renderPossibleGroups(groupBlocks) {
+  if (!groupBlocks.length) {
+    els.possibleGroupNumbers.className = 'group-results empty-state';
+    els.possibleGroupNumbers.textContent = '至少需要 2 筆號碼才能產生預測。';
+    return;
+  }
+
+  els.possibleGroupNumbers.className = 'group-results';
+  els.possibleGroupNumbers.innerHTML = groupBlocks.map((group) => {
+    const chips = group.numbers.map(num =>
+      `<span class="number-circle" style="background:${group.color}; color:#08203f; border-color:rgba(255,255,255,0.15)">${num}</span>`
+    ).join('');
+    return `<div class="group-block">${chips}</div>`;
+  }).join('');
+}
+
+function renderUnlikelyRuns(runs, overlapSet) {
+  if (!runs.length) {
     els.unlikelyNumbers.className = 'result-list empty-state';
     els.unlikelyNumbers.textContent = '至少需要 2 筆號碼才能產生預測。';
     return;
   }
-  els.unlikelyNumbers.className = 'result-list';
-  els.unlikelyNumbers.innerHTML = numbers.map(num => {
-    const cls = overlapSet.has(num) ? 'number-circle red-fill' : 'number-circle';
-    return `<span class="${cls}">${num}</span>`;
+
+  els.unlikelyNumbers.className = 'unlikely-run-wrap';
+  els.unlikelyNumbers.innerHTML = runs.map(run => {
+    const chips = run.map(num => {
+      const cls = overlapSet.has(num) ? 'number-circle red-fill' : 'number-circle';
+      return `<span class="${cls}">${num}</span>`;
+    }).join('');
+    return `<div class="unlikely-run">${chips}</div>`;
   }).join('');
 }
 
@@ -193,8 +304,9 @@ function renderAll() {
   const predictionBundle = buildPredictions();
   renderHistory();
   renderPossibleNumbers(predictionBundle.possibleCounts);
-  renderUnlikelyNumbers(predictionBundle.finalCombinedUnlikely, predictionBundle.overlapSet);
-  renderUsualExcludeSaved(predictionBundle.finalUsualExcludeCurrent);
+  renderPossibleGroups(predictionBundle.possibleGroupBlocks);
+  renderUnlikelyRuns(predictionBundle.unlikelyRuns, predictionBundle.overlapSet);
+  renderUsualExcludeSaved(predictionBundle.currentUsualActive);
   saveState();
 }
 
@@ -211,7 +323,7 @@ function handleAddLatest() {
 
 function handleReplaceBulkHistory() {
   try {
-    const numbers = parseNumberList(els.bulkInput.value);
+    const numbers = parseNumberList(els.bulkInput.value); // latest -> oldest
     state.historyLatestFirst = numbers;
     renderAll();
   } catch (err) {
@@ -221,7 +333,7 @@ function handleReplaceBulkHistory() {
 
 function handleAppendBulkHistory() {
   try {
-    const numbers = parseNumberList(els.bulkInput.value);
+    const numbers = parseNumberList(els.bulkInput.value); // latest -> oldest
     state.historyLatestFirst = numbers.concat(state.historyLatestFirst);
     renderAll();
   } catch (err) {

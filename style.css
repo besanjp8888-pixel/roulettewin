@@ -11,8 +11,6 @@
   --secondary: #16386f;
   --secondary-hover: #1b4687;
   --danger-border: rgba(255, 111, 145, 0.35);
-  --chip: #13284f;
-  --chip-border: rgba(159, 178, 217, 0.18);
   --red: #ff4d67;
 }
 
@@ -219,7 +217,7 @@ button:hover {
 .unlikely-run-wrap {
   display: flex;
   flex-wrap: wrap;
-  gap: 36px;
+  gap: 42px;
   margin-top: 10px;
   min-height: 44px;
   align-items: center;
@@ -227,10 +225,16 @@ button:hover {
 
 .unlikely-run {
   display: inline-flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 6px;
   align-items: center;
-  padding: 2px 0;
+  padding: 6px 10px;
+}
+
+.unlikely-run.grouped {
+  border: 3px solid var(--red);
+  border-radius: 999px;
+  padding: 8px 12px;
 }
 
 .legend-row {
@@ -257,6 +261,14 @@ button:hover {
 }
 
 .legend-dot-red { background: var(--red); }
+
+.legend-oval {
+  width: 24px;
+  height: 14px;
+  border: 2px solid var(--red);
+  border-radius: 999px;
+  display: inline-block;
+}
 
 .number-circle {
   display: inline-flex;
@@ -324,7 +336,6 @@ button:hover {
   font-size: 13px;
 }
 
-
 .prediction-head-right {
   display: flex;
   align-items: center;
@@ -378,4 +389,5 @@ button:hover {
   .history-grid { grid-template-columns: repeat(4, 1fr); }
   .possible-circle { width: 56px; height: 56px; }
   .unlikely-run-wrap { gap: 48px; }
+  .unlikely-run.grouped { padding: 8px 10px; }
 }

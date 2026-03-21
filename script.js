@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'roulette_app_v8_state';
+const STORAGE_KEY = 'roulette_app_v10_state';
 
 const wheelOrder = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
 const wheelIndexMap = Object.fromEntries(wheelOrder.map((n, i) => [n, i]));
@@ -173,6 +173,20 @@ function buildPossibleAdjacencyGroups(possibleSet) {
   }));
 }
 
+function getPossibleSetFromCurrentHistory() {
+  const historyChronological = getChronologicalHistory();
+  if (historyChronological.length < 2) return new Set();
+
+  const latest = state.historyLatestFirst[0];
+  const { forward, backward } = buildDistances(historyChronological);
+  const possibleSet = new Set();
+
+  for (const step of forward) possibleSet.add(moveForward(latest, step));
+  for (const step of backward) possibleSet.add(moveBackward(latest, step));
+
+  return possibleSet;
+}
+
 function buildPredictions() {
   const historyChronological = getChronologicalHistory();
   if (historyChronological.length < 2) {
@@ -198,8 +212,6 @@ function buildPredictions() {
   }
 
   const possibleSet = new Set(possibleCounts.keys());
-
-  // Hidden merged groups still used to derive unlikely numbers.
   const hiddenMergedGroupBlocks = buildMergedGroupsFromPossible(possibleSet);
   const possibleGroupUnion = new Set();
   for (const group of hiddenMergedGroupBlocks) {
@@ -248,6 +260,22 @@ function buildPredictions() {
   };
 }
 
+function renderValidation() {
+  if (!state.lastValidation) {
+    els.validationStatus.className = 'validation-status empty-status';
+    els.validationStatus.textContent = '尚無驗證';
+    return;
+  }
+
+  if (state.lastValidation.hit) {
+    els.validationStatus.className = 'validation-status';
+    els.validationStatus.innerHTML = `上期預測有 <span class="hit-chip">中</span>`;
+  } else {
+    els.validationStatus.className = 'validation-status';
+    els.validationStatus.textContent = '上期預測有意外，命中不遠了';
+  }
+}
+
 function renderPossibleNumbers(possibleCounts, possibleDisplayGroups) {
   if (!possibleCounts.size) {
     els.possibleNumbers.className = 'possible-wrap empty-state';
@@ -286,7 +314,8 @@ function renderUnlikelyRuns(runs, overlapSet) {
       const cls = overlapSet.has(num) ? 'number-circle red-fill' : 'number-circle';
       return `<span class="${cls}">${num}</span>`;
     }).join('');
-    return `<div class="unlikely-run">${chips}</div>`;
+    const wrapCls = run.length >= 2 ? 'unlikely-run grouped' : 'unlikely-run';
+    return `<div class="${wrapCls}">${chips}</div>`;
   }).join('');
 }
 
@@ -302,37 +331,6 @@ function renderUsualExcludeSaved(currentActive) {
     const inactive = activeSet.has(num) ? '' : ' style="opacity:0.38;text-decoration:line-through;"';
     return `<span class="number-circle"${inactive}>${num}</span>`;
   }).join('');
-}
-
-
-function renderValidation() {
-  if (!state.lastValidation) {
-    els.validationStatus.className = 'validation-status empty-status';
-    els.validationStatus.textContent = '尚無驗證';
-    return;
-  }
-
-  if (state.lastValidation.hit) {
-    els.validationStatus.className = 'validation-status';
-    els.validationStatus.innerHTML = `上期預測有 <span class="hit-chip">中</span>`;
-  } else {
-    els.validationStatus.className = 'validation-status';
-    els.validationStatus.textContent = '上期預測有意外，命中在不遠處';
-  }
-}
-
-function getPossibleSetFromCurrentHistory() {
-  const historyChronological = getChronologicalHistory();
-  if (historyChronological.length < 2) return new Set();
-
-  const latest = state.historyLatestFirst[0];
-  const { forward, backward } = buildDistances(historyChronological);
-  const possibleSet = new Set();
-
-  for (const step of forward) possibleSet.add(moveForward(latest, step));
-  for (const step of backward) possibleSet.add(moveBackward(latest, step));
-
-  return possibleSet;
 }
 
 function renderHistory() {
@@ -367,9 +365,7 @@ function handleAddLatest() {
   }
 
   const previousPossibleSet = getPossibleSetFromCurrentHistory();
-  state.lastValidation = previousPossibleSet.size
-    ? { hit: previousPossibleSet.has(value), number: value }
-    : null;
+  state.lastValidation = previousPossibleSet.size ? { hit: previousPossibleSet.has(value), number: value } : null;
 
   state.historyLatestFirst.unshift(value);
   els.latestInput.value = '';

@@ -272,7 +272,7 @@ function renderValidation() {
     els.validationStatus.innerHTML = `上期預測有 <span class="hit-chip">中</span>`;
   } else {
     els.validationStatus.className = 'validation-status';
-    els.validationStatus.textContent = '上期預測有意外，命中不遠了';
+    els.validationStatus.textContent = '上期預測沒命中，卻在不遠處';
   }
 }
 
